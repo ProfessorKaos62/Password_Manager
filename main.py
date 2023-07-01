@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
 import random
+import json
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 
 
@@ -29,18 +30,50 @@ def gen_password():
 
     password_entry.insert(0, f'{password}')
 
+
+# ---------------------------- SEARCH WEBSITE ------------------------------- #
+
+
+def search_website():
+    try:
+        with open('data.json', 'r') as manager:
+            data = json.load(manager)
+            website = data[website_entry.get()]
+            popup = Tk()
+            popup.title('Login Info')
+            label = Label(popup, text=f'email/username: {website["email"]}\n\n password: {website["password"]}')
+            label.pack(padx=30, pady=30)
+    except KeyError:
+        popup = Tk()
+        popup.title('Error')
+        label = Label(popup, text='No data file found')
+        label.pack(pady=30, padx=30)
+
+
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 
 
 def save():
+    new_data = {
+        website_entry.get(): {
+            'email': username_entry.get(),
+            'password': password_entry.get(),
+        }
+    }
     if len(website_entry.get()) == 0 or len(password_entry.get()) == 0 or len(username_entry.get()) == 0:
         messagebox.showerror(message='Please Enter valid information')
     else:
-        is_ok = messagebox.askokcancel(message=f'Is this correct?\n Website: {website_entry.get()}\n Email: {username_entry.get()}\n '
-                                                                  f'Password: {password_entry.get()}')
-        if is_ok:
-            with open('data.txt', mode='a') as passwords:
-                passwords.write(f'{website_entry.get()} | {username_entry.get()} | {password_entry.get()}\n')
+        try:
+            with open('data.json', mode='r') as passwords:
+                data = json.load(passwords)
+        except FileNotFoundError:
+            with open('data.json', mode='w') as passwords:
+                json.dump(new_data, passwords, indent=4)
+        else:
+            data.update(new_data)
+            with open('data.json', mode='w') as passwords:
+                json.dump(data, passwords, indent=4)
+        finally:
             website_entry.delete(0, 'end')
             password_entry.delete(0, 'end')
 
@@ -61,7 +94,9 @@ website_label = Label(text='Website:', font=('Ariel', 14), highlightthickness=0)
 website_label.grid(column=0, row=1)
 website_entry = Entry(width=35, highlightthickness=0)
 website_entry.focus()
-website_entry.grid(column=1, row=1, columnspan=2, sticky=EW)
+website_entry.grid(column=1, row=1, columnspan=1, sticky=EW)
+search_button = Button(text='Search', font=('Ariel', 14), width=14, command=search_website)
+search_button.grid(column=2, row=1)
 
 # Username Entry
 username_label = Label(text='Email/Username:', font=('Ariel', 14), highlightthickness=0)
@@ -75,7 +110,7 @@ password_label = Label(text='Password:', font=('Ariel', 14), highlightthickness=
 password_label.grid(column=0, row=3)
 password_entry = Entry(width=21, highlightthickness=0)
 password_entry.grid(column=1, row=3, columnspan=1, sticky=EW)
-generate_password_button = Button(text='Generate Password', bg='white', font=('Ariel', 14), command=gen_password)
+generate_password_button = Button(text='Generate Password', font=('Ariel', 14), command=gen_password)
 generate_password_button.grid(column=2, row=3)
 
 # Add Button
